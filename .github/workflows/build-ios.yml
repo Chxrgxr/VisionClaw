@@ -31,11 +31,7 @@ jobs:
           xcodebuild -project samples/CameraAccess/CameraAccess.xcodeproj \
                      -scheme CameraAccess \
                      -sdk iphonesimulator \
+                     -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
                      -configuration Release \
-                     clean build CODE_SIGNING_ALLOWED=NO
-
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: CameraAccess-iOS-Build
-          path: samples/CameraAccess/build/Release-iphonesimulator/
+                     clean build \
+                     CODE_SIGNING_ALLOWED=NO

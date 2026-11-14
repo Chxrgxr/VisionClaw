@@ -1,9 +1,10 @@
-name: Build iOS IPA
+name: Build Unsigned IPA
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   build:
@@ -12,6 +13,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: sudo xcode-select -s /Applications/Xcode.app
 
       - name: Create Secrets.swift
         run: |
@@ -26,12 +30,28 @@ jobs:
           }
           EOF
 
-      - name: Build Simulator App / Archive
+      - name: Build App
         run: |
-          xcodebuild -project samples/CameraAccess/CameraAccess.xcodeproj \
-                     -scheme CameraAccess \
-                     -sdk iphonesimulator \
-                     -destination 'generic/platform=iOS Simulator' \
-                     -configuration Release \
-                     clean build \
-                     CODE_SIGNING_ALLOWED=NO
+          SCHEME=$(xcodebuild -list -project samples/CameraAccess/CameraAccess.xcodeproj | awk '/Schemes:/{flag=1; next} /^[[:space:]]*$/{flag=0} flag' | head -n 1 | xargs)
+          xcodebuild archive \
+            -project samples/CameraAccess/CameraAccess.xcodeproj \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -archivePath $RUNNER_TEMP/CameraAccess.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM=""
+
+      - name: Create Payload and IPA
+        run: |
+          mkdir -p $RUNNER_TEMP/Payload
+          cp -r $RUNNER_TEMP/CameraAccess.xcarchive/Products/Applications/*.app $RUNNER_TEMP/Payload/
+          cd $RUNNER_TEMP
+          zip -r VisionClaw.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VisionClaw-IPA
+          path: ${{ runner.temp }}/VisionClaw.ipa

@@ -25,6 +25,7 @@ jobs:
               static let openClawHost = "http://localhost"
               static let openClawPort = 18789
               static let openClawGatewayToken = ""
+              static let openClawHookToken = ""
               static let cloudGatewayURL = ""
               static let cloudGatewayToken = ""
           }
